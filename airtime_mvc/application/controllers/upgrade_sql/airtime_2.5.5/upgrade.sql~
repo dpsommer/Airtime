@@ -1,0 +1,12 @@
+DELETE FROM cc_pref WHERE keystr = 'system_version';
+INSERT INTO cc_pref (keystr, valstr) VALUES ('system_version', '2.5.5');
+
+INSERT INTO cc_pref (keystr, valstr) VALUES ('default_minutes_between_ads', 30);
+INSERT INTO cc_pref (keystr, valstr) VALUES ('default_ad_length', 30);
+INSERT INTO cc_pref (keystr, valstr) VALUES ('ad_insertion_type', 'a');
+
+INSERT INTO cc_files (mime, ftype, filepath, track_title, bit_rate, sample_rate, length, genre, cueout, silan_check, import_status) VALUES ('audio/mp3', 'audioclip', 'ad/ad_20.mp3', 'ad_20.mp3', '56000', '48000', '00:00:20', 'ad', '00:00:20', 't', 0);
+INSERT INTO cc_files (mime, ftype, filepath, track_title, bit_rate, sample_rate, length, genre, cueout, silan_check, import_status) VALUES ('audio/mp3', 'audioclip', 'ad/ad_30.mp3', 'ad_30.mp3', '56000', '48000', '00:00:30', 'ad', '00:00:30', 't', 0);
+
+ALTER TABLE cc_show ADD COLUMN image_path varchar(255) DEFAULT '';
+ALTER TABLE cc_show_instances ADD COLUMN description varchar(255) DEFAULT '';

@@ -890,8 +890,8 @@ FROM cc_show_instances      AS si1
 LEFT JOIN cc_show_instances AS si2  ON si1.instance_id = si2.id
 LEFT JOIN cc_show           AS show ON show.id         = si1.show_id
 LEFT JOIN cc_files          AS f    ON f.id            = si1.file_id
-WHERE si1.modified_instance = FALSE
 SQL;
+// WHERE si1.modified_instance = FALSE
         //only want shows that are starting at the time or later.
         $start_string = $start_timestamp->format("Y-m-d H:i:s");
         $end_string = $end_timestamp->format("Y-m-d H:i:s");

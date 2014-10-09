@@ -143,7 +143,11 @@ class Application_Service_ShowService
             $ccShowInstance->updateScheduleStatus($con);
 
             //delete the edited instance from the repeating sequence
-            $ccShowInstanceOrig->setDbModifiedInstance(true)->save();
+            
+            // Temporary deletion of original instance
+            $ccShowInstanceOrig->delete($con);
+            $ccShowInstance->setDbModifiedInstance(true)->save();
+            //$ccShowInstanceOrig->setDbModifiedInstance(true)->save();
 
             $con->commit();
             Application_Model_RabbitMq::PushSchedule();
@@ -301,12 +305,6 @@ class Application_Service_ShowService
             if ($this->ccShow->isRepeating()) {
                 $ccShowDays = $this->ccShow->getRepeatingCcShowDays();
             } else {
-                //$ccShowDays = $this->ccShow->getCcShowDayss();
-                
-                /* Cannot use the above statement to get the cc_show_days
-                 * object because it's getting the old object before the
-                 * show was edited. clearInstancePool() didn't work.
-                 */
                 $ccShowDays = CcShowDaysQuery::create()
                     ->filterByDbShowId($this->ccShow->getDbId())
                     ->find();
@@ -375,11 +373,6 @@ class Application_Service_ShowService
                     $ccShow, $this->newInstanceIdsCreated[$ccShow->getDbId()]);
             }
         }
-
-        /*if (isset($this->linkedShowContent)) {
-            Application_Service_SchedulerService::fillPreservedLinkedShowContent(
-                $this->ccShow, $this->linkedShowContent);
-        }*/
 
         return $this->ccShow;
     }
@@ -584,17 +577,17 @@ SQL;
             $currentShowEndDateTime = $this->getRepeatingEndDate();
             
             if ($endDateTime && $currentShowEndDateTime != $endDateTime) {
-            	$endDate = clone $endDateTime;
-            	$endDate->setTimezone(new DateTimeZone("UTC"));
-            	
+                $endDate = clone $endDateTime;
+                $endDate->setTimezone(new DateTimeZone("UTC"));
+                
                 //show's "No End" option was toggled
                 //or the end date comes earlier
                 if (is_null($currentShowEndDateTime) || ($endDateTime < $currentShowEndDateTime)) {
                     //"No End" option was unchecked so we need to delete the
                     //repeat instances that are scheduled after the new end date
                     //OR
-                	//end date was pushed back so we have to delete any
-                	//instances of this show scheduled after the new end date
+                    //end date was pushed back so we have to delete any
+                    //instances of this show scheduled after the new end date
                     $this->deleteInstancesFromDate($endDate->format("Y-m-d"), $showId);
                 }
             }
@@ -602,25 +595,6 @@ SQL;
 
         return $daysAdded;
     }
-
-    /*private function preserveLinkedShowContent()
-    {
-        // Get show content from any future linked instance. It doesn't
-        // matter which instance since content is the same in all.
-        //
-        $ccShowInstance = $this->ccShow->getFutureCcShowInstancess()->getFirst();
-
-        if (!$ccShowInstance) {
-            return;
-        }
-        $ccSchedules = CcScheduleQuery::create()
-            ->filterByDbInstanceId($ccShowInstance->getDbId())
-            ->find();
-
-       if (!$ccSchedules->isEmpty()) {
-           $this->linkedShowContent = $ccSchedules;
-       }
-    }*/
 
     /*
      * returns a DateTime of the current show end date set to the timezone of the show.
@@ -641,10 +615,10 @@ SQL;
         $date = null;
         
         if ($query !== false && isset($query["last_show"])) {
-        	$date = new DateTime(
-        		$query["last_show"],
-        		new DateTimeZone($query["timezone"])	
-        	);
+            $date = new DateTime(
+                $query["last_show"],
+                new DateTimeZone($query["timezone"])    
+            );
         }
         
         return $date;
@@ -931,23 +905,23 @@ SQL;
      */
     private function calculateEndDate($showData)
     {
-    	//if no end return null
+        //if no end return null
         if ($showData['add_show_no_end']) {
             $endDate = null;
         } 
         //if the show is repeating & ends, then return the end date
         elseif ($showData['add_show_repeats']) {
             $endDate = new DateTime(
-            	$showData['add_show_end_date'], 
-            	new DateTimeZone($showData["add_show_timezone"])
+                $showData['add_show_end_date'], 
+                new DateTimeZone($showData["add_show_timezone"])
             );
             $endDate->add(new DateInterval("P1D"));
         }
         //the show doesn't repeat, so add one day to the start date. 
         else {
             $endDate = new DateTime(
-            	$showData['add_show_start_date'],
-            	new DateTimeZone($showData["add_show_timezone"])
+                $showData['add_show_start_date'],
+                new DateTimeZone($showData["add_show_timezone"])
             );
             $endDate->add(new DateInterval("P1D"));
         }
@@ -1096,7 +1070,6 @@ SQL;
     private function createWeeklyRepeatInstances($showDay, $populateUntil,
         $repeatType, $repeatInterval, $daysAdded=null)
     {
-
         $show_id       = $showDay->getDbShowId();
         $first_show    = $showDay->getDbFirstShow(); //non-UTC
         $last_show     = $showDay->getDbLastShow(); //non-UTC
@@ -1117,11 +1090,11 @@ SQL;
             $repeatInterval, $populateUntil);
 
         if ($last_show) {
-        	$utcLastShowDateTime = new DateTime($last_show, new DateTimeZone($timezone));
-        	$utcLastShowDateTime->setTimezone(new DateTimeZone("UTC"));
+            $utcLastShowDateTime = new DateTime($last_show, new DateTimeZone($timezone));
+            $utcLastShowDateTime->setTimezone(new DateTimeZone("UTC"));
         }
         else {
-        	$utcLastShowDateTime = null;
+            $utcLastShowDateTime = null;
         }
 
         $previousDate = clone $start;
@@ -1149,7 +1122,7 @@ SQL;
                         $newInstance = true;
                         $ccShowInstance = new CcShowInstances();
                     }
-                }  else {
+                } else {
                     $newInstance = true;
                     $ccShowInstance = new CcShowInstances();
                 }
@@ -1217,12 +1190,12 @@ SQL;
 
         $this->repeatType = $showDay->getDbRepeatType();
 
-    	if ($last_show) {
-        	$utcLastShowDateTime = new DateTime($last_show, new DateTimeZone($timezone));
-        	$utcLastShowDateTime->setTimezone(new DateTimeZone("UTC"));
+        if ($last_show) {
+            $utcLastShowDateTime = new DateTime($last_show, new DateTimeZone($timezone));
+            $utcLastShowDateTime->setTimezone(new DateTimeZone("UTC"));
         }
         else {
-        	$utcLastShowDateTime = null;
+            $utcLastShowDateTime = null;
         }
 
         while ($start->getTimestamp() < $end->getTimestamp()) {
@@ -1458,15 +1431,13 @@ SQL;
         $ccShowInstance = CcShowInstancesQuery::create()
             ->filterByDbStarts($temp->format("Y-m-d H:i:s"), Criteria::EQUAL)
             ->filterByDbShowId($this->ccShow->getDbId(), Criteria::EQUAL)
-            //->filterByDbModifiedInstance(false, Criteria::EQUAL)
             ->filterByDbRebroadcast(0, Criteria::EQUAL)
-            ->limit(1)
-            ->find();
+            ->findOne();
 
-        if ($ccShowInstance->isEmpty()) {
+        if (!$ccShowInstance) {
             return false;
         } else {
-            return $ccShowInstance[0];
+            return $ccShowInstance;
         }
     }
 
@@ -1481,13 +1452,12 @@ SQL;
             ->filterByDbShowId($this->ccShow->getDbId())
             ->filterByDbDay($day)
             ->filterByDbRepeatType($repeatType)
-            ->limit(1)
-            ->find();
+            ->findOne();
 
-        if ($ccShowDay->isEmpty()) {
+        if (!$ccShowDay) {
             return false;
         } else {
-            return $ccShowDay[0];
+            return $ccShowDay;
         }
     }
 
@@ -1545,8 +1515,8 @@ SQL;
         $showId = $this->ccShow->getDbId();
 
         $startDateTime = new DateTime(
-        	$showData['add_show_start_date']." ".$showData['add_show_start_time'],
-        	new DateTimeZone($showData['add_show_timezone'])	
+            $showData['add_show_start_date']." ".$showData['add_show_start_time'],
+            new DateTimeZone($showData['add_show_timezone'])    
         );
 
         $endDateTime = $this->calculateEndDate($showData);
@@ -1554,7 +1524,7 @@ SQL;
             $endDate = $endDateTime->format("Y-m-d");
         }
         else {
-        	$endDate = null;
+            $endDate = null;
         }
 
         //Our calculated start DOW must be used for non repeating since a day has not been selected.
